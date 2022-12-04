@@ -20,7 +20,7 @@ _原链接：https://mp.weixin.qq.com/s/0GfCOUEw4svvSQVoShjJDw_
 
 这不仅仅是从可扩展性和可维护性的角度出发，其实我们做架构做稳定性、隔离是一种减少影响面的基本手段，类似的隔离环境做灰度、分批发布等，这里不做扩展。
 
-![Image text](https://mmbiz.qlogo.cn/mmbiz_png/Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfBsZrLo3614gicicCF8jzVWoDlO6rYXSvgfnRnlnWx2qUDLN02nFzg3Pg/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1&retryload=2)
+![Image text](README.assets\EdeD55E93aZ6bicxIx5naK3giaeiaZSkoPXHyciabECXKfBsZrLo3614gicicCF8jzVWoDlO6rYXSvgfnRnlnWx2qUDLN02nFzg3Pg.png)
 
 ```
 /**
@@ -51,7 +51,7 @@ public class StateAProcessor interface StateProcessor {
 
 受限于Java枚举不能继承的规范，如果要开发通用的功能、注解中就不能使用枚举、所以此处只好使用String。
 
-![Image text](https://mmbiz.qlogo.cn/mmbiz_png/Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfJNLcqc0NR09xVZskiaibSBmPhqicXHnngTmRrk21iaKY3vaQGiaiavISt0Gg/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1&retryload=2)
+![Image text](README.assets\6cf6D97fbcZ6bicxIx5naK3giaeiaZSkoPXHyciabECXKfJNLcqc0NR09xVZskiaibSBmPhqicXHnngTmRrk21iaKY3vaQGiaiavISt0Gg.png)
 
 ```
 /**
@@ -90,7 +90,7 @@ public class StateCreateProcessor interface StateProcessor {
 
 这里有人可能有一些疑问，这个"事件"和上面说的"多场景"、"多维度"有什么不一样。解释一下，我们这里说的是"事件"是一个具体的业务要执行的动作，比如用户下单是一个业务事件、用户取消订单是一个业务事件、用户支付订单也是一个业务事件。而"多场景"、"多维度"则是可交由业务自行进行扩展的维度，比如自有标准模式来源的订单、通过开放平台API来的订单、通过第三方标准来源的订单，某某小程序、某某APP来源可以定义为不同场景，而接送机、企业用车、拼车等可以定义为维度。
 
-![Image text](https://mmbiz.qlogo.cn/mmbiz_png/Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfRLyxX5fNKXaRUyIhEVHh791eiaZIzELR6EfxiaSmsuzzIWiblNmLEPH3A/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1&retryload=2)
+![Image text](README.assets\34f1ccFa62Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfRLyxX5fNKXaRUyIhEVHh791eiaZIzELR6EfxiaSmsuzzIWiblNmLEPH3A.png)
 
 ```
 public @interface OrderProcessor {
@@ -135,7 +135,7 @@ public interface OrderStateEvent {
 
 在满足了上面说的多维度组合的业务场景、开发多个实现类来执行的情况，我们思考执行这些实现类在流程上是否有再次抽象和封装的地方、以减少研发工作量和尽量的实现通用流程。我们经过观察和抽象，发现每一个订单状态流转的流程中，都会有三个流程：校验、业务逻辑执行、数据更新持久化；于是再次抽象，可以将一个状态流转分为数据准备（prepare）——>校验（check）——>获取下一个状态（getNextState）——>业务逻辑执行（action）——>数据持久化（save）——>后续处理（after）这六个阶段；然后通过一个模板方法将六个阶段方法串联在一起、形成一个有顺序的执行逻辑。这样一来整个状态流程的执行逻辑就更加清晰和简单了、可维护性上也得到的一定的提升。
 
-![Image text](https://mmbiz.qlogo.cn/mmbiz_png/Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfkVPNWMpKT9THmARPnDn6Oh17q0NJ8lM7fAT1vWDibvicydDJFPf8Ziavg/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1&retryload=2)
+![Image text](README.assets\1fc8D2CdF8Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfkVPNWMpKT9THmARPnDn6Oh17q0NJ8lM7fAT1vWDibvicydDJFPf8Ziavg.png)
 
 ```
 /**
@@ -238,7 +238,7 @@ public interface Checker<T, C> {
 ```
 逻辑简单了、扩展性和维护性解决了、性能问题就会显现出来。多个校验器checker串行执行性能肯定性能比较差，此时很简单的可以想到使用并行执行，是的、此处使用多线程并行执行多个校验器checker能显著提高执行效率。但是也应该意识到，有些校验器逻辑可能是有前后依赖的（其实不应该出现），还有写业务流程中要求某些校验器的执行必须有前后顺序，还有些流程不要求校验器的执行顺序但是要求错误时的返回顺序、那么怎么在并行的前提下保证顺序呢、此处就可以用order+Future实现了。经过一系列的思考和总结，我们把校验器分为参数校验（paramChecker）、同步校验（syncChecker）、异步校验（asyncChecker）三种类型，其中参数校验paramChecker是需要在状态处理器最开始处执行的，为什么这么做、因为参数都不合法了肯定没有继续向下执行的必要了。
 
-![Image text](https://mmbiz.qlogo.cn/mmbiz_png/Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfTRgBOgP2rGuHgMMWYCBGkN8ibwbj7BTEG23pOPdXNAx1j0MribkXxDOQ/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1&retryload=2)
+![Image text](README.assets\6BDc2cf6C9Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfTRgBOgP2rGuHgMMWYCBGkN8ibwbj7BTEG23pOPdXNAx1j0MribkXxDOQ.png)
 
 ```
 /**
@@ -531,7 +531,7 @@ a）使用rocketmq等支持的两阶段式消息提交方式：
 如果长时间没有向消息服务器发生确认发送的消息，消息系统则会回调一个提前约定的接口、来查看本地业务是否成功，以此决定是否真正发生消息
 
 
-![Image text](https://mmbiz.qlogo.cn/mmbiz_png/Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfLBl33QibKjCSdAMXv4MOJiaxSPUJ8micB9aehsBXyibC4bnibzg2hnBspZw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1&retryload=2)
+![Image text](README.assets\7fd2cD0267Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfLBl33QibKjCSdAMXv4MOJiaxSPUJ8micB9aehsBXyibC4bnibzg2hnBspZw.png)
 
 （图片来源：rocketmq官网）
 
@@ -552,7 +552,7 @@ c）还是使用数据库事务方案保证：
 
 对于没有发送成功的消息（也就是表里面没有被删除的记录），再由定时任务来轮询发送
 
-![Image text](https://mmbiz.qlogo.cn/mmbiz_png/Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfTs7uAJ8CywDeg3147oibZVvErF1c4V3sHWKSibykvQMIV7LQKCzGEAmQ/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1&retryload=2)
+![Image text](README.assets\91f2eba0dAZ6bicxIx5naK3giaeiaZSkoPXHyciabECXKfTs7uAJ8CywDeg3147oibZVvErF1c4V3sHWKSibykvQMIV7LQKCzGEAmQ.png)
 
 还有其他方案吗？有的。
 
@@ -574,7 +574,7 @@ d）数据对账、发现不一致时进行补偿处理、以此保证数据的�
 
 上面讲到同一个状态模型下、不同的类型或维度有些逻辑或处理流程是一样的小部分逻辑是不同的。于是我们可以把一种处理流程定义为标准的或默认的处理逻辑，把差异化的代码写成插件，当业务执行到具体差异化逻辑时会调用到不同的插件进行处理，这样只需要为不同的类型或维度编写对应有差异逻辑的插件即可、标准的处理流程由默认的处理器执行就行。
 
-![Image text](https://mmbiz.qlogo.cn/mmbiz_png/Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfEGwuq5LUdGKycaab60N44s3mO6mIFSMhftKJ1Lfv3b3qGImCm6HsyQ/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1&retryload=2)
+![Image text](README.assets\CD2CCb8aefZ6bicxIx5naK3giaeiaZSkoPXHyciabECXKfEGwuq5LUdGKycaab60N44s3mO6mIFSMhftKJ1Lfv3b3qGImCm6HsyQ.png)
 
 
 （2）差异流程+公用插件
@@ -865,14 +865,14 @@ public class OrderCreatedProcessor extends AbstractStateProcessor<String, Create
 
 简易的状态机引擎的执行流程整理，主要介绍运行时的状态机执行过程。
 
-![Image text](https://mmbiz.qlogo.cn/mmbiz_png/Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfsUENLgJhgyNic2b926DJ1YvfFFArc1VNwamQ6PMgK6uIibB51NO761hQ/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1&retryload=2)
+![Image text](README.assets\adefF36847Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfsUENLgJhgyNic2b926DJ1YvfFFArc1VNwamQ6PMgK6uIibB51NO761hQ.png)
 
 
 状态处理器的原理
 
 简易的状态机处理器的原理和依赖整理，主要介绍状态处理器的流程和细节。
 
-![Image text](https://mmbiz.qlogo.cn/mmbiz_png/Z6bicxIx5naK3giaeiaZSkoPXHyciabECXKfHkYQ0JVOyWYpQqTE95ce4wJZwFicCMebXpYnbNaSFxUpoWq7nMaLHlA/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1&retryload=2)
+![Image text](README.assets\c8f0f1e8EAZ6bicxIx5naK3giaeiaZSkoPXHyciabECXKfHkYQ0JVOyWYpQqTE95ce4wJZwFicCMebXpYnbNaSFxUpoWq7nMaLHlA.png)
 
 
 三  其他
